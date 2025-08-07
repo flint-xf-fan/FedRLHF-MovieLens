@@ -4,3 +4,6 @@
 
 ### on a separate terminal, start all clients
 ```bash run_multiple_clients.sh```
+
+### visualization
+```python plot_results_k50.py```
