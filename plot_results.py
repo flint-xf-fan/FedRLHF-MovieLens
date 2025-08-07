@@ -9,7 +9,7 @@ from glob import glob
 # Append the parent directory to the system path to import custom modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from FedRLHF.utils.visualization import plot_learning_curves_with_variance,plot_learning_curves_with_variance_vertical_layout
+from utils.visualization import plot_learning_curves_with_variance,plot_learning_curves_with_variance_vertical_layout
 
 def load_and_process_data(file_pattern):
     """
@@ -24,9 +24,33 @@ def load_and_process_data(file_pattern):
                and mean client Spearman correlations.
     """
     all_data = []
-    for file_path in glob(file_pattern):
-        with open(file_path, 'rb') as f:
-            all_data.append(pickle.load(f))
+    matching_files = glob(file_pattern)
+    
+    print(f"Looking for files with pattern: {file_pattern}")
+    print(f"Found {len(matching_files)} files: {matching_files}")
+    
+    if not matching_files:
+        print("No files found! Checking available files in directory...")
+        results_dir = os.path.dirname(file_pattern)
+        if os.path.exists(results_dir):
+            available_files = os.listdir(results_dir)
+            print(f"Available files in {results_dir}: {available_files}")
+        else:
+            print(f"Directory {results_dir} does not exist!")
+        return None, None, None, None, None
+    
+    for file_path in matching_files:
+        try:
+            with open(file_path, 'rb') as f:
+                data = pickle.load(f)
+                all_data.append(data)
+                print(f"Successfully loaded: {file_path}")
+        except Exception as e:
+            print(f"Error loading {file_path}: {e}")
+    
+    if not all_data:
+        print("No data could be loaded from any files!")
+        return None, None, None, None, None
     
     # Calculate means across all runs for weighted round accuracies
     mean_round_accuracies = np.mean([data['mean_round_accuracies'] for data in all_data], axis=0)
@@ -57,10 +81,15 @@ def load_and_process_data(file_pattern):
     )
 
 # Define the path pattern to the saved data
-save_path_pattern = os.path.join('training_metrics_results', 'ml-latest-small_10_clients_training_data_seed_*.pkl')
+save_path_pattern = os.path.join('training_metrics_results', 'ml-latest-small_**_clients_training_data_seed_*.pkl')
 
 # Load and process the training data
-mean_round_accuracies, std_round_accuracies, mean_client_accuracies, std_client_accuracies, mean_client_spearman_corrs = load_and_process_data(save_path_pattern)
+result = load_and_process_data(save_path_pattern)
+if result[0] is None:
+    print("No data available for plotting. Please run the training first.")
+    sys.exit(1)
+
+mean_round_accuracies, std_round_accuracies, mean_client_accuracies, std_client_accuracies, mean_client_spearman_corrs = result
 
 # Generate rounds list based on the number of rounds
 rounds = list(range(1, len(mean_round_accuracies) + 1))
