@@ -1,3 +1,5 @@
+under revision for the JAAMAS...
+
 ### first, download the movielens dataset at: https://grouplens.org/datasets/movielens/
 ### Start the server in one terminal
 ```python main.py```
